@@ -61,6 +61,8 @@
 
     #run-button { background: #ffffff; color: #111111; }
     #status-button { background: #ffd54f; color: #111111; }
+    #speed-button { background: #00c853; color: #ffffff; }
+    #speed-button.is-fast { background: #ff6d00; color: #ffffff; }
 
     .hint {
       display: block;
@@ -100,9 +102,36 @@
       const topPanel = document.querySelector('#top-panel');
       const runButton = document.querySelector('#run-button');
       const statusButton = document.querySelector('#status-button');
+      const speedButton = document.querySelector('#speed-button');
 
       let running = true;
       let warning = false;
+      let doubleSpeed = false;
+
+      const NORMAL_SPEED = 220;
+      const DOUBLE_SPEED = NORMAL_SPEED * 2;
+
+      function updateMotorSpeed() {
+        const selectedSpeed = doubleSpeed ? DOUBLE_SPEED : NORMAL_SPEED;
+
+        shaft.setAttribute('spin-control', {
+          axis: 'y',
+          speed: selectedSpeed,
+          active: running
+        });
+
+        speedButton.textContent = doubleSpeed
+          ? 'กลับความเร็วปกติ'
+          : 'เพิ่ม Speed x2';
+
+        speedButton.classList.toggle('is-fast', doubleSpeed);
+
+        if (running) {
+          topPanel.innerHTML =
+            `มอเตอร์กำลังทำงานที่ ${selectedSpeed}°/วินาที` +
+            '<span class="hint">ความเร็วปกติ 220°/วินาที — ความเร็ว x2 เท่ากับ 440°/วินาที</span>';
+        }
+      }
 
       marker.addEventListener('markerFound', () => {
         topPanel.innerHTML = 'พบ Hiro Marker แล้ว — โมเดลมอเตอร์พร้อมใช้งาน<span class="hint">แตะปุ่มด้านล่างเพื่อทดลองควบคุม</span>';
@@ -114,21 +143,32 @@
 
       runButton.addEventListener('click', () => {
         running = !running;
-        shaft.setAttribute('spin-control', 'active', running);
+        updateMotorSpeed();
         runButton.textContent = running ? 'หยุดมอเตอร์' : 'เริ่มมอเตอร์';
+
+        if (!running) {
+          topPanel.innerHTML =
+            'มอเตอร์หยุดทำงาน' +
+            '<span class="hint">กดปุ่มเริ่มมอเตอร์เพื่อให้เพลาหมุนอีกครั้ง</span>';
+        }
+      });
+
+      speedButton.addEventListener('click', () => {
+        doubleSpeed = !doubleSpeed;
+        updateMotorSpeed();
       });
 
       statusButton.addEventListener('click', () => {
         warning = !warning;
 
         if (warning) {
-          motorBody.setAttribute('color', '#E309E3');
+          motorBody.setAttribute('color', '#ef5350');
           warningLamp.setAttribute('color', '#ff1744');
           warningLamp.setAttribute('material', 'emissive', '#ff1744');
           arLabel.setAttribute('value', 'MOTOR M1\nSTATUS: WARNING');
           statusButton.textContent = 'เปลี่ยนเป็นปกติ';
         } else {
-          motorBody.setAttribute('color', '#E309E3');
+          motorBody.setAttribute('color', '#1976d2');
           warningLamp.setAttribute('color', '#00e676');
           warningLamp.setAttribute('material', 'emissive', '#00c853');
           arLabel.setAttribute('value', 'MOTOR M1\nSTATUS: NORMAL');
@@ -148,6 +188,7 @@
   <div id="controls">
     <button id="run-button" type="button">หยุดมอเตอร์</button>
     <button id="status-button" type="button">จำลองคำเตือน</button>
+    <button id="speed-button" type="button">เพิ่ม Speed x2</button>
   </div>
 
   <a-scene
@@ -187,7 +228,7 @@
         radius="0.32"
         height="0.72"
         segments-radial="32"
-        color="#E309E3"
+        color="#1976d2"
         metalness="0.25"
         roughness="0.55"
       ></a-cylinder>
